@@ -1,0 +1,7 @@
+.env
+venv/
+__pycache__/
+*.pyc
+output/
+*.json.key
+gcp-service-account-key.json
