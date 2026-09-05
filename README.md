@@ -351,7 +351,7 @@ For any real-world deployment beyond this hackathon demo, proper consent, privac
 **HH Goa 2026 — Face Identification Challenge**
 
 - Tanmay Tripathi ([@Tanmay2006-Tech](https://github.com/Tanmay2006-Tech))
-- Anandi Mahajan  ([@Tanmay2006-Tech](https://github.com/Tanmay2006-Tech))
+- Anandi Mahajan  ([@ghost33218](https://github.com/ghost33218))
 
 ## 📄 License
 
