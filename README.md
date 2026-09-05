@@ -2,13 +2,13 @@
 
 > **HH Goa 2026 — Task #3: Face Identification & Blockchain Verification**
 
-An end-to-end face identification and verification pipeline that discovers potential matches across the web, re-verifies them using facial embeddings, archives the resulting evidence on IPFS, and creates a tamper-evident verification record on the Polygon Amoy blockchain.
+An end-to-end pipeline that takes a face scan as input, finds a genuine matching post on the web/social media via reverse image search, re-verifies that the match is actually the same person using facial embeddings, and creates a tamper-evident, on-chain record of the discovered evidence on the Polygon Amoy blockchain.
+
+**Pipeline shape:** Face scan → Web/social media search (find matching post) → Blockchain upload & verification of the discovered data.
 
 ---
 
 ## 🚀 Overview
-
-The pipeline takes a face image as input and performs:
 
 ```text
 Face Image
@@ -17,13 +17,13 @@ Face Image
 Face Detection & Encoding
     │
     ▼
-Reverse Image Search
+Reverse Image Search (live web/social search)
     │
     ▼
 Candidate Images
     │
     ▼
-Face Re-verification
+Face Re-verification (embedding comparison)
     │
     ▼
 Best Verified Match
@@ -31,24 +31,24 @@ Best Verified Match
     ├──────────────► IPFS Evidence Archive
     │
     ▼
-Tamper-Evident Blockchain Record
+Tamper-Evident Blockchain Record (Polygon Amoy)
     │
     ▼
 On-chain Verification
 ```
 
-The system combines computer vision, reverse image search, decentralized storage, and blockchain verification into a single pipeline.
+The system combines computer vision, a genuine live web search, decentralized storage, and blockchain verification into a single pipeline — no hardcoded or pre-picked matches.
 
 ## ✨ Features
 
 - 🧑‍💻 Face detection and facial embedding generation
-- 🔍 Reverse image search for discovering potential matches
-- 🧠 Facial embedding comparison to verify the same person rather than relying only on visual similarity
+- 🔍 Live reverse image search for discovering potential matches (not hardcoded)
+- 🧠 Facial embedding comparison to confirm the same person, not just visual similarity
 - 🌐 Web and social-media candidate discovery
 - 📦 Complete match payload archived on IPFS
 - ⛓️ Tamper-evident record stored on Polygon Amoy
 - 🔐 SHA-256 hashing of face encoding and match payload
-- ✅ Automatic verification of local data against the on-chain record
+- ✅ Automatic re-verification of local data against the on-chain record
 - 🧪 Dry-run mode for testing without blockchain submission
 
 ## 🏗️ Technology Stack
@@ -59,7 +59,7 @@ The system combines computer vision, reverse image search, decentralized storage
 | Face Recognition | `face_recognition` / `dlib` |
 | Reverse Image Search | Google Cloud Vision |
 | Decentralized Storage | Pinata / IPFS |
-| Blockchain | Polygon Amoy |
+| Blockchain | **Polygon Amoy** (public EVM testnet) |
 | Smart Contract | Solidity |
 | Blockchain Development | Hardhat |
 | Python Blockchain Client | Web3.py |
@@ -132,9 +132,7 @@ Face encoding SHA-256:
 
 ### 2. Reverse Image Search
 
-The reference image is submitted to the reverse-image-search component.
-
-Potential matching pages/images are collected from the web and social platforms.
+The reference image is submitted to the reverse-image-search component (`reverse_search.py`), which performs a **live** web/social media search — this is a genuine query on every run, not a hardcoded or pre-selected result.
 
 Example output:
 
@@ -146,9 +144,7 @@ The results are treated as candidates, not as confirmed identity matches.
 
 ### 3. Face Re-verification
 
-Each candidate image is downloaded and analyzed.
-
-The candidate's facial embedding is compared with the original face embedding. A lower face distance indicates a closer facial embedding match.
+Each candidate image is downloaded and analyzed. The candidate's facial embedding is compared with the original face embedding — a lower face distance indicates a closer facial embedding match.
 
 Example:
 
@@ -159,7 +155,7 @@ Distance: 0.0000
 Verified match: YES
 ```
 
-This additional verification step prevents the system from trusting reverse-image-search results alone.
+This step prevents the pipeline from trusting reverse-image-search results on visual similarity alone; it confirms the match is actually the same person.
 
 ### 4. IPFS Evidence Archive
 
@@ -172,18 +168,15 @@ Pinned to IPFS:
 QmX6ghcqhvw0jUtCYRsrL1CBxXaRPTN2FvwZhw1QdbevCH
 ```
 
-The IPFS gateway can be used to inspect the archived payload:
+Gateway: `https://gateway.pinata.cloud/ipfs/QmX6ghcqhvw0jUtCYRsrL1CBxXaRPTN2FvwZhw1QdbevCH`
 
-`https://gateway.pinata.cloud/ipfs/QmX6ghcqhvw0jUtCYRsrL1CBxXaRPTN2FvwZhw1QdbevCH`
+### 5. Blockchain Upload & Verification
 
-### 5. Blockchain Verification
+The project uses a Solidity smart contract deployed on **Polygon Amoy** (public EVM testnet, Chain ID `80002`).
 
-The project uses a Solidity smart contract deployed on Polygon Amoy.
+- **Contract address:** `0xEE30E6f46A892bd222DFa43BbE34c86C3042f188`
 
-- **Contract:** `0xEE30E6f46A892bd222DFa43BbE34c86C3042f188`
-- **Network:** Polygon Amoy (Chain ID: `80002`)
-
-The blockchain record contains cryptographic references rather than storing the original face image directly on-chain. The contract records:
+The blockchain record stores cryptographic references rather than the original face image itself. The contract records:
 
 - Face encoding SHA-256
 - Match payload SHA-256
@@ -194,9 +187,9 @@ The blockchain record contains cryptographic references rather than storing the 
 - Timestamp
 - Submitting wallet address
 
-### 6. End-to-End Verification
+### 6. On-Chain Re-verification
 
-After submitting the blockchain transaction, `verify_record.py` reads the record back from the smart contract and compares it with the local payload.
+After submitting the blockchain transaction, `verify_record.py` reads the record back from the smart contract and compares it against the local payload.
 
 Successful execution produces:
 
@@ -205,11 +198,11 @@ Successful execution produces:
 ✓ VERIFIED — record #0 on-chain matches the local payload exactly.
 ```
 
-This provides an end-to-end verification path from the original face scan to the blockchain record.
+This gives an end-to-end verification path from the original face scan all the way to the on-chain record.
 
 ## 🔐 Tamper-Evident Design
 
-The system generates two important hashes — `SHA-256(face encoding)` and `SHA-256(canonical match payload)` — which are recorded on-chain. The complete payload itself is stored on IPFS.
+The system generates two hashes — `SHA-256(face encoding)` and `SHA-256(canonical match payload)` — which are recorded on-chain. The complete payload itself is stored on IPFS.
 
 ```text
 Local Face Encoding ──▶ SHA-256 ──▶ Blockchain Record
@@ -217,7 +210,7 @@ Match Payload       ──▶ SHA-256 ──▶ Blockchain Record
 Match Payload       ──▶ IPFS ──▶ CID ──▶ Blockchain Record
 ```
 
-If the local payload is modified after submission, its calculated hash will no longer match the hash stored on-chain.
+If the local payload is modified after submission, its recomputed hash no longer matches the hash stored on-chain — making tampering detectable.
 
 ## 🧪 Running the Project
 
@@ -255,7 +248,7 @@ PINATA_JWT=your_pinata_jwt
 
 > ⚠️ Never commit `.env`, private keys, or API keys to GitHub.
 
-## 🏃 Running the Pipeline
+### 5. Run the pipeline
 
 Place an input image in the project directory and run:
 
@@ -263,20 +256,18 @@ Place an input image in the project directory and run:
 python src/pipeline.py test_face.jpg
 ```
 
-The pipeline will perform:
+The pipeline performs:
 
 ```text
 STEP 1 - Face detection + encoding
-STEP 2 - Reverse-image search
+STEP 2 - Reverse-image search (live)
 STEP 3 - Face re-verification
 STEP 4 - IPFS pin
 STEP 5 - Polygon Amoy blockchain write
 STEP 6 - On-chain re-verification
 ```
 
-### 🧪 Dry Run
-
-To test the complete pipeline without writing to the blockchain:
+### 🧪 Dry run (no blockchain write)
 
 ```bash
 python src/pipeline.py test_face.jpg --dry-run-chain
@@ -290,24 +281,20 @@ python src/pipeline.py test_face.jpg --no-ipfs
 
 ## 📜 Smart Contract
 
-`FaceRecord.sol` provides functions for:
+`FaceRecord.sol` provides:
 
 - `addRecord(...)`
 - `getRecord(...)`
 - `totalRecords()`
 
-Each submitted record receives a sequential record ID. The `RecordAdded` event provides an auditable blockchain event containing the record information.
-
-### Working with Hardhat
+Each submitted record receives a sequential record ID. The `RecordAdded` event provides an auditable on-chain event with the record information.
 
 - Deploy: `scripts/deploy.ts`
-- Send a raw op transaction: `scripts/send-op-tx.ts`
+- Send a raw transaction: `scripts/send-op-tx.ts`
 - Sample tests: `test/Counter.ts`
-- TypeChain bindings for the contracts live in `types/ethers-contracts/`
+- TypeChain bindings: `types/ethers-contracts/`
 
-## 🌐 Blockchain Transaction
-
-A successful demonstration transaction on Polygon Amoy:
+## 🌐 Example Blockchain Transaction
 
 ```text
 Transaction:
@@ -317,62 +304,55 @@ Block:
 46797023
 ```
 
-View the transaction on PolygonScan:
-
-`https://amoy.polygonscan.com/tx/98b9ec3e8a1239ac188373460ec55080cb842ada98e9363421e1ce3a1c23f23d`
+View on PolygonScan: `https://amoy.polygonscan.com/tx/98b9ec3e8a1239ac188373460ec55080cb842ada98e9363421e1ce3a1c23f23d`
 
 ## 🎯 Hackathon Requirement Mapping
 
 | HH Goa Task Requirement | Implementation |
 |---|---|
-| Face detection | `face_encode.py` |
-| Face encoding | `face_recognition` / `dlib` |
-| Web/social media search | `reverse_search.py` |
-| Matching face verification | `face_verify.py` |
-| Blockchain verification | `blockchain_writer.py` |
-| Decentralized storage | Pinata / IPFS |
-| Tamper-evident record | SHA-256 + Polygon Amoy |
-| On-chain re-verification | `verify_record.py` |
-| End-to-end pipeline | `pipeline.py` |
+| Face detection & encoding | `face_encode.py` |
+| Genuine, non-hardcoded web/social search | `reverse_search.py` (live query per run) |
+| Blockchain upload of discovered data (hash/fingerprint) | `blockchain_writer.py` → Polygon Amoy |
+| Re-verify data against the on-chain record | `verify_record.py` |
+| No website required | N/A — not built |
+| Full source in GitHub repo | This repository |
+| README: what it does, how to run, blockchain used, limitations | This document |
+
+## ⚠️ Known Limitations
+
+- **Single-face input only.** The pipeline currently processes one detected face per image; multi-face images are not handled.
+- **Search API dependency.** The reverse-image-search step relies on a third-party API (Google Cloud Vision / SerpAPI). Result quality, rate limits, and availability depend on that provider, not on this codebase.
+- **No confidence threshold/config yet.** The face re-verification step reports a distance score, but there's no configurable confidence cutoff — matches are currently treated as verified based on a fixed internal comparison rather than a tunable threshold.
+- **Testnet, not mainnet.** The contract is deployed to Polygon Amoy (a public testnet), not a production/mainnet chain. This is sufficient to demonstrate a real, verifiable on-chain record, but the record is not economically final the way a mainnet transaction would be.
+- **Candidate ranking is basic.** When multiple candidates are returned by the search step, ranking/selection logic is simple and could surface a false positive if visually similar but different individuals appear in results.
+- **No duplicate-submission protection.** Running the pipeline again on the same image will create a new on-chain record rather than detecting that one already exists.
+- **Biometric data handling.** Face encodings and images are processed locally and referenced (via hash/CID) on-chain; no consent-management or data-retention system is implemented, since this is a hackathon demo rather than a production deployment.
+- **English-centric search.** No specific handling for non-Latin-script social platforms or region-specific search engines.
 
 ## 🔒 Security & Privacy
 
-The project is designed to avoid putting the original face image directly on the blockchain. Instead, the blockchain stores cryptographic hashes and references to the associated evidence.
+The original face image is never written directly to the blockchain — only cryptographic hashes and references to the archived evidence are stored on-chain. Sensitive credentials (`.env`, `PRIVATE_KEY`, `PINATA_JWT`, `SERPAPI_KEY`) are excluded from version control.
 
-Sensitive credentials such as `.env`, `PRIVATE_KEY`, `PINATA_JWT`, and `SERPAPI_KEY` must never be committed to the repository.
-
-For real-world deployment, appropriate consent, privacy, data-retention, and legal requirements should be considered before processing biometric data.
+For any real-world deployment beyond this hackathon demo, proper consent, privacy, data-retention, and legal review would be required before processing biometric data.
 
 ## 🚧 Future Improvements
 
 - Support multiple faces in a single input image
-- Improve candidate ranking
-- Add a web dashboard for verification results
+- Configurable confidence-score thresholds for verification
+- Improve candidate ranking and duplicate-record detection
+- Add a web dashboard for browsing verification results
 - Add QR-based blockchain verification
-- Support additional EVM networks
+- Support additional EVM networks / mainnet deployment
 - Add automated smart-contract tests
 - Add encrypted evidence storage
-- Add stronger duplicate/candidate filtering
-- Add confidence scoring and configurable verification thresholds
 
 ## 👥 Team
 
 **HH Goa 2026 — Face Identification Challenge**
 
-Team:
 - Tanmay Tripathi ([@Tanmay2006-Tech](https://github.com/Tanmay2006-Tech))
-- `<Team Member 2>`
-- `<Team Member 3>`
-- `<Team Member 4>`
+- Anandi Mahajan  ([@Tanmay2006-Tech](https://github.com/Tanmay2006-Tech))
 
 ## 📄 License
 
 This project was created for the HH Goa 2026 hackathon challenge.
-
----
-
-### ✅ Before you push
-
-- Replace the `<Team Member N>` placeholders above with your actual teammates.
-- Double-check `.env`, API keys, and the private key are **not** in the repo or in this README.
-- Consider adding a screenshots/demo section showing the 6 pipeline steps and the successful Polygon transaction for judges.
