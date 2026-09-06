@@ -5,3 +5,4 @@ __pycache__/
 output/
 *.json.key
 gcp-service-account-key.json
+.vs/
